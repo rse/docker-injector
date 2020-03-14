@@ -39,6 +39,7 @@ Examples
 --------
 
 ```
+# start docker-injector(8)
 $ docker-injector \
   -p docker-injector.pid -d \
   -l docker-injector.log -v 3 \
@@ -52,9 +53,21 @@ $ docker-injector \
   -E CURL_CA_BUNDLE=/etc/ssl/certs.pem \
   -a 127.0.0.1:12375 -c 127.0.0.1:2375
 
+# redirect docker(1) to docker-injector(8)
 $ export DOCKER_HOST=tcp://127.0.0.1:12375
 
-$ docker version
+# test-driven docker-injector(8)
+$ docker run --rm -it alpine sh
+/ # mount |grep /etc/ssl
+/dev/sda1 on /etc/ssl type ext4 (ro,relatime,errors=remount-ro,stripe=32)
+/ # env | grep /etc/ssl | sort
+CURL_CA_BUNDLE=/etc/ssl/certs.pem
+CURL_CA_PATH=/etc/ssl/certs
+JAVA_TOOL_OPTIONS=-Djavax.net.ssl.trustStore=/etc/ssl/certs.jks
+SSL_CERT_DIR=/etc/ssl/certs
+SSL_CERT_FILE=/etc/ssl/certs.pem
+SSL_CERT_JKS=/etc/ssl/certs.jks
+/ # exit
 ```
 
 License
