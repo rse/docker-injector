@@ -52,7 +52,7 @@ const daemon      = require("daemon")
             "dot-notation":              false,
             "halt-at-non-option":        true
         })
-        .usage("Usage: docker-proxy " +
+        .usage("Usage: docker-injector " +
             "[-h|--help] " +
             "[-V|--version] " +
             "[-d|--daemon] " +
@@ -366,9 +366,9 @@ const daemon      = require("daemon")
 })().catch((err) => {
     /*  handle fatal error  */
     if (process.stderr.isTTY)
-        process.stderr.write(`docker-proxy: ${chalk.red("ERROR:")} ${err}\n`)
+        process.stderr.write(`docker-injector: ${chalk.red("ERROR:")} ${err}\n`)
     else
-        process.stderr.write(`docker-proxy: ERROR: ${err}\n`)
+        process.stderr.write(`docker-injector: ERROR: ${err}\n`)
     process.exit(1)
 })
 
