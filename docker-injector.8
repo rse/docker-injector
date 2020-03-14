@@ -41,21 +41,35 @@ The following inject SSL/TLS information of the Docker host into all created con
 .P
 .RS 2
 .nf
+# start docker-injector(8)
 $ docker-injector \[rs]
   -p docker-injector.pid -d \[rs]
   -l docker-injector.log -v 3 \[rs]
-  -e SSL_CERT_DIR=/etc/ssl/certs \[rs]
-  -e SSL_CERT_FILE=/etc/ssl/certs.pem \[rs]
-  -e SSL_CERT_JKS=/etc/ssl/certs.jks \[rs]
-  -e JAVA_TOOL_OPTIONS=-Djavax.net.ssl.trustStore=/etc/ssl/certs.jks \[rs]
-  -e CURL_CA_PATH=/etc/ssl/certs \[rs]
-  -e CURL_CA_BUNDLE=/etc/ssl/certs.pem \[rs]
-  -m /etc/ssl:/etc/ssl:ro \[rs]
+  -L docker.stack.status=injected \[rs]
+  -B /etc/ssl:/etc/ssl:ro \[rs]
+  -E SSL_CERT_DIR=/etc/ssl/certs \[rs]
+  -E SSL_CERT_FILE=/etc/ssl/certs.pem \[rs]
+  -E SSL_CERT_JKS=/etc/ssl/certs.jks \[rs]
+  -E JAVA_TOOL_OPTIONS=-Djavax.net.ssl.trustStore=/etc/ssl/certs.jks \[rs]
+  -E CURL_CA_PATH=/etc/ssl/certs \[rs]
+  -E CURL_CA_BUNDLE=/etc/ssl/certs.pem \[rs]
   -a 127.0.0.1:12375 -c 127.0.0.1:2375
 
+# redirect docker(1) to docker-injector(8)
 $ export DOCKER_HOST=tcp://127.0.0.1:12375
 
-$ docker version
+# test-driven docker-injector(8)
+$ docker run --rm -it alpine sh
+/ # mount |grep /etc/ssl
+/dev/sda1 on /etc/ssl type ext4 (ro,relatime,errors=remount-ro,stripe=32)
+/ # env | grep /etc/ssl | sort
+CURL_CA_BUNDLE=/etc/ssl/certs.pem
+CURL_CA_PATH=/etc/ssl/certs
+JAVA_TOOL_OPTIONS=-Djavax.net.ssl.trustStore=/etc/ssl/certs.jks
+SSL_CERT_DIR=/etc/ssl/certs
+SSL_CERT_FILE=/etc/ssl/certs.pem
+SSL_CERT_JKS=/etc/ssl/certs.jks
+/ # exit
 .fi
 .RE
 .SH "HISTORY"
