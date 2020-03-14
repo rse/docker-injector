@@ -53,11 +53,12 @@ const shortid     = require("shortid")
         .usage("Usage: docker-proxy " +
             "[-h|--help] " +
             "[-V|--version] " +
+            "[-v|--verbose <level>] " +
             "[-L|--label <key>=<value>] " +
             "[-E|--environment <key>=<value>] " +
-            "[-B|--bind <vol>:<vol>[:<options>]] " +
-            "[-l|--local <local-address>:<local-port> " +
-            "[-r|--remote <remote-address>:<remote-port>"
+            "[-B|--bind <local-dir>:<remote-dir>[:<options>]] " +
+            "[-l|--local <local-address>:<local-port>|<unix-socket-path>] " +
+            "[-r|--remote <remote-address>:<remote-port>|<unix-socket-path>]"
         )
         .option("h", {
             describe: "show program help information",
@@ -128,8 +129,8 @@ const shortid     = require("shortid")
         else
             throw new Error(`invalid address/port specification "${spec}"`)
     }
-    let addrLocal  = argv.local
-    let addrRemote = argv.remote
+    const addrLocal  = argv.local
+    const addrRemote = argv.remote
     argv.local  = parseAddrPort(argv.local)
     argv.remote = parseAddrPort(argv.remote)
 
@@ -145,7 +146,7 @@ const shortid     = require("shortid")
     }
 
     /*  log verbose message  */
-    levels = [
+    const levels = [
         { name: "ERROR",   style: chalk.red.bold },
         { name: "WARNING", style: chalk.yellow.bold },
         { name: "INFO",    style: chalk.blue },
@@ -188,7 +189,7 @@ const shortid     = require("shortid")
                         if (content.Labels === undefined || content.Labels === null)
                             content.Labels = {}
                         argv.label.forEach((label) => {
-                            let m = label.match(/^(.+?)=(.+)$/)
+                            const m = label.match(/^(.+?)=(.+)$/)
                             if (m === null)
                                 throw new Error("invalid label specification")
                             content.Labels[m[1]] = m[2]

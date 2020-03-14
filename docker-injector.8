@@ -1,0 +1,58 @@
+.TH "DOCKER-INJECTOR" "8" "March 2020" "" ""
+.SH "NAME"
+\fBdocker-injector\fR - Injecting Docker Reverse Proxy
+.SH "SYNOPSIS"
+.P
+\fBdocker-injector\fR \[lB]\fB-h\fR|\fB--help\fR\[rB] \[lB]\fB-V\fR|\fB--version\fR\[rB] \[lB]\fB-v\fR|\fB--verbose\fR \fIlevel\fR\[rB] \[lB]\fB-L\fR|\fB--label\fR \fIkey\fR\fB=\fR\fIvalue\fR\[rB] \[lB]\fB-E\fR|\fB--environment\fR \fIkey\fR\fB=\fR\fIvalue\fR\[rB] \[lB]\fB-B\fR|\fB--bind\fR \fIlocal-dir\fR\fB:\fR\fIremote-dir\fR\[lB]\fB:\fR\fIoptions\fR\[rB]\[rB] \[lB]\fB-l\fR|\fB--local\fR \fIlocal-address\fR:\fIlocal-port\fR|\fIunix-socket-path\fR\[rB] \[lB]\fB-r\fR|\fB--remote\fR \fIremote-address\fR:\fIremote-port\fR|\fIunix-socket-path\fR\[rB]
+.SH "DESCRIPTION"
+.P
+\fBdocker-injector\fR(8) is a small reverse proxy for the \fBdockerd\fR(8) daemon socket (\fB/var/lib/docker.sock\fR or \fB127.0.0.1:2375\fR) which allows you to transparently inject label, environment and bind mount information for the creation of Docker containers into the HTTP/REST requests received on the server-side by Docker clients like \fBdocker\fR(1) or \fBdrone-runner-docker\fR(8). This effectively allows you to emulate the \fBdocker\fR(1) options \fB-l\fR (label), \fB-e\fR (environment) and \fB-v\fR (bind mount) in case you cannot directly control the container creation on the client-side.
+.SH "OPTIONS"
+.P
+The following command-line options and arguments exist:
+.RS 0
+.IP \(bu 4
+\[lB]\fB-h\fR|\fB--help\fR\[rB]:
+.IP \(bu 4
+\[lB]\fB-V\fR|\fB--version\fR\[rB]:
+.IP \(bu 4
+\[lB]\fB-v\fR|\fB--verbose\fR \fIlevel\fR\[rB]:
+.IP \(bu 4
+\[lB]\fB-L\fR|\fB--label\fR \fIkey\fR\fB=\fR\fIvalue\fR\[rB]:
+.IP \(bu 4
+\[lB]\fB-E\fR|\fB--environment\fR \fIkey\fR\fB=\fR\fIvalue\fR\[rB]:
+.IP \(bu 4
+\[lB]\fB-B\fR|\fB--bind\fR \fIlocal-dir\fR\fB:\fR\fIremote-dir\fR\[lB]\fB:\fR\fIoptions\fR\[rB]\[rB]:
+.IP \(bu 4
+\[lB]\fB-l\fR|\fB--local\fR \fIlocal-address\fR:\fIlocal-port\fR|\fIunix-socket-path\fR\[rB]:
+.IP \(bu 4
+\[lB]\fB-r\fR|\fB--remote\fR \fIremote-address\fR:\fIremote-port\fR|\fIunix-socket-path\fR\[rB]:
+.RE 0
+
+.SH "EXAMPLES"
+.P
+.RS 2
+.nf
+$ docker-proxy \[rs]
+  -v 9 \[rs]
+  -e SSL_CERT_DIR=/etc/ssl/certs \[rs]
+  -e SSL_CERT_FILE=/etc/ssl/certs.pem \[rs]
+  -e SSL_CERT_JKS=/etc/ssl/certs.jks \[rs]
+  -e JAVA_TOOL_OPTIONS=-Djavax.net.ssl.trustStore=/etc/ssl/certs.jks \[rs]
+  -e CURL_CA_PATH=/etc/ssl/certs \[rs]
+  -e CURL_CA_BUNDLE=/etc/ssl/certs.pem \[rs]
+  -m /etc/ssl:/etc/ssl:ro \[rs]
+  -l 127.0.0.1:12375 \[rs]
+  -r 127.0.0.1:2375
+
+$ export DOCKER_HOST=tcp://127.0.0.1:12375
+
+$ docker version
+.fi
+.RE
+.SH "HISTORY"
+.P
+The \fBdocker-injector\fR(1) utility was developed in March 2020 to automatically and transparently inject SSL/TLS information into every created Docker container in case one cannot directly control the container creation -- as it is the case, for instance, when \fBdrone-server\fR(8) runs its Docker containers via \fBdrone-runner-docker\fR(8).
+.SH "AUTHOR"
+.P
+Dr. Ralf S. Engelschall \fI\(larse@engelschall.com\(ra\fR

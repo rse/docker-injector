@@ -53,7 +53,7 @@
         "lint":                   "eslint --config eslint.yaml docker-injector.js",
         "package":                "make package",
         "package:clean":          "rm -f docker-injector-linux-debian-x64.tar.xz docker-injector-linux-alpine-x64.tar.xz",
-        "generate:man":           "remark --quiet --use remark-man --output docker-injector.1 docker-injector.md",
-        "generate:clean":         "rm -f docker-injector.1"
+        "generate:man":           "remark --quiet --use remark-man --output docker-injector.8 docker-injector.md",
+        "generate:clean":         "rm -f docker-injector.8"
     }
 }

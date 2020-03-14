@@ -13,7 +13,14 @@ Docker-Injector
 Abstract
 --------
 
-`docker-injector`(1) is a small utility for...
+docker-injector(8) is a small reverse proxy for the
+[Docker](https://www.docker.com/) daemon socket
+(`unix:///var/lib/docker.sock` or `tcp://127.0.0.1:2375`) which
+allows you to transparently inject label, environment and bind mount
+information for the creation of containers into the HTTP/REST requests
+sent by Docker clients like docker(1). This effectively allows one to
+emulate the docker(1) options `-l` (label), `-e` (environment) and `-v`
+(bind mount) in case one cannot directly control the container creation.
 
 Installation
 ------------
@@ -33,16 +40,21 @@ Examples
 
 ```
 $ docker-proxy \
-  -v 9 \
-  -e SSL_CERT_DIR=/etc/ssl/certs \
-  -e SSL_CERT_FILE=/etc/ssl/certs.pem \
-  -e SSL_CERT_JKS=/etc/ssl/certs.jks \
-  -e JAVA_TOOL_OPTIONS=-Djavax.net.ssl.trustStore=/etc/ssl/certs.jks \
-  -e CURL_CA_PATH=/etc/ssl/certs \
-  -e CURL_CA_BUNDLE=/etc/ssl/certs.pem \
-  -m /etc/ssl:/etc/ssl:ro \
+  -v 3 \
+  -L docker.stack.status=injected \
+  -B /etc/ssl:/etc/ssl:ro \
+  -E SSL_CERT_DIR=/etc/ssl/certs \
+  -E SSL_CERT_FILE=/etc/ssl/certs.pem \
+  -E SSL_CERT_JKS=/etc/ssl/certs.jks \
+  -E JAVA_TOOL_OPTIONS=-Djavax.net.ssl.trustStore=/etc/ssl/certs.jks \
+  -E CURL_CA_PATH=/etc/ssl/certs \
+  -E CURL_CA_BUNDLE=/etc/ssl/certs.pem \
   -l 127.0.0.1:12375 \
   -r 127.0.0.1:2375
+
+$ export DOCKER_HOST=tcp://127.0.0.1:12375
+
+$ docker version
 ```
 
 License
