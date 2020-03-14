@@ -1,0 +1,59 @@
+{
+    "name":        "docker-injector",
+    "homepage":    "http://github.com/rse/docker-injector",
+    "description": "Injecting Docker Reverse Proxy",
+    "version":     "0.9.0",
+    "license":     "MIT",
+    "author": {
+        "name":    "Dr. Ralf S. Engelschall",
+        "email":   "rse@engelschall.com",
+        "url":     "http://engelschall.com"
+    },
+    "keywords": [
+        "docker", "socket", "reverse", "proxy", "inject", "environment", "bind"
+    ],
+    "repository": {
+        "type": "git",
+        "url":  "git://github.com/rse/docker-injector.git"
+    },
+    "bugs": {
+        "url":  "http://github.com/rse/docker-injector/issues"
+    },
+    "bin": {
+        "docker-injector": "./docker-injector.js"
+    },
+    "devDependencies": {
+        "babel-eslint":           "10.1.0",
+        "eslint":                 "6.8.0",
+        "eslint-config-standard": "14.1.0",
+        "eslint-plugin-standard": "4.0.1",
+        "eslint-plugin-promise":  "4.2.1",
+        "eslint-plugin-import":   "2.20.1",
+        "eslint-plugin-node":     "11.0.0",
+        "npm-run-all":            "4.1.5",
+        "pkg":                    "4.4.4",
+        "remark-cli":             "7.0.1",
+        "remark":                 "11.0.2",
+        "remark-man":             "6.0.0"
+    },
+    "dependencies" : {
+        "yargs":                  "15.3.0",
+        "strip-ansi":             "6.0.0",
+        "chalk":                  "3.0.0",
+        "moment":                 "2.24.0",
+        "shortid":                "2.2.15"
+    },
+    "engines": {
+        "node":                   ">=10.0.0"
+    },
+    "scripts": {
+        "prepublishOnly":         "npm-run-all -s lint",
+        "build":                  "npm-run-all -s lint generate:man package",
+        "clean":                  "npm-run-all -s package:clean generate:clean",
+        "lint":                   "eslint --config eslint.yaml docker-injector.js",
+        "package":                "make package",
+        "package:clean":          "rm -f docker-injector-linux-debian-x64.tar.xz docker-injector-linux-alpine-x64.tar.xz",
+        "generate:man":           "remark --quiet --use remark-man --output docker-injector.1 docker-injector.md",
+        "generate:clean":         "rm -f docker-injector.1"
+    }
+}
