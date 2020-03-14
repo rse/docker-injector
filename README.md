@@ -13,14 +13,15 @@ Docker-Injector
 Abstract
 --------
 
-docker-injector(8) is a small reverse proxy for the
-[Docker](https://www.docker.com/) daemon socket
-(`unix:///var/lib/docker.sock` or `tcp://127.0.0.1:2375`) which
+`docker-injector`(8) is a small reverse proxy for the `dockerd`(8)
+daemon socket (`/var/lib/docker.sock` or `127.0.0.1:2375`) which
 allows you to transparently inject label, environment and bind mount
-information for the creation of containers into the HTTP/REST requests
-sent by Docker clients like docker(1). This effectively allows one to
-emulate the docker(1) options `-l` (label), `-e` (environment) and `-v`
-(bind mount) in case one cannot directly control the container creation.
+information for the creation of Docker containers into the HTTP/REST
+requests received on the server-side by Docker clients like `docker`(1)
+or `drone-runner-docker`(8). This effectively allows you to emulate the
+`docker`(1) options `-l` (label), `-e` (environment) and `-v` (bind
+mount) in case you cannot directly control the container creation on the
+client-side.
 
 Installation
 ------------
