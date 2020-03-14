@@ -28,6 +28,7 @@ const my          = require("./package.json")
 
 /*  internal requirements  */
 const process     = require("process")
+const fs          = require("fs")
 const net         = require("net")
 
 /*  external requirements  */
@@ -35,6 +36,7 @@ const yargs       = require("yargs")
 const chalk       = require("chalk")
 const moment      = require("moment")
 const shortid     = require("shortid")
+const daemon      = require("daemon")
 
 /*  establish asynchronous context  */
 ;(async () => {
@@ -53,12 +55,15 @@ const shortid     = require("shortid")
         .usage("Usage: docker-proxy " +
             "[-h|--help] " +
             "[-V|--version] " +
-            "[-v|--verbose <level>] " +
+            "[-d|--daemon] " +
+            "[-p|--pid-file <pid-file>] " +
+            "[-l|--log-file <log-file>] " +
+            "[-v|--log-level <log-level>] " +
             "[-L|--label <key>=<value>] " +
             "[-E|--environment <key>=<value>] " +
             "[-B|--bind <local-dir>:<remote-dir>[:<options>]] " +
-            "[-l|--local <local-address>:<local-port>|<unix-socket-path>] " +
-            "[-r|--remote <remote-address>:<remote-port>|<unix-socket-path>]"
+            "[-a|--accept <local-address>:<local-port>|<unix-socket-path>] " +
+            "[-c|--connect <remote-address>:<remote-port>|<unix-socket-path>]"
         )
         .option("h", {
             describe: "show program help information",
@@ -68,9 +73,21 @@ const shortid     = require("shortid")
             describe: "show program version information",
             alias:    "version", type: "boolean", default: false
         })
+        .option("d", {
+            describe: "detach from terminal into a daemon process",
+            alias:    "daemon", type: "boolean", default: false
+        })
+        .option("p", {
+            describe: "write PID of process to file",
+            alias:    "pid-file", type: "string", nargs: 1, default: ""
+        })
+        .option("l", {
+            describe: "write log entries of process to file",
+            alias:    "log-file", type: "string", nargs: 1, default: "-"
+        })
         .option("v", {
             describe: "show verbose messages",
-            alias:    "verbose", type: "number", default: 1
+            alias:    "log-level", type: "number", default: 1
         })
         .option("L", {
             describe: "label to inject into created containers",
@@ -84,13 +101,13 @@ const shortid     = require("shortid")
             describe: "bind volumes to inject into created containers",
             alias:    "bind", type: "string", nargs: 1, default: []
         })
-        .option("l", {
-            describe: "local socket to listen to",
-            alias:    "local", type: "string", nargs: 1, default: "127.0.0.1:12375"
+        .option("a", {
+            describe: "local socket to accept client connections",
+            alias:    "accept", type: "string", nargs: 1, default: "127.0.0.1:12375"
         })
-        .option("r", {
-            describe: "remote Docker daemon socket to connect to",
-            alias:    "remote", type: "string", nargs: 1, default: "127.0.0.1:2375"
+        .option("c", {
+            describe: "remote socket to connect to Docker daemon",
+            alias:    "connect", type: "string", nargs: 1, default: "127.0.0.1:2375"
         })
         .version(false)
         .strict(true)
@@ -98,7 +115,7 @@ const shortid     = require("shortid")
         .demand(0)
         .parse(process.argv.slice(2))
 
-    /*  short-circuit processing of "-V" command-line option  */
+    /*  short-circuit processing of "-V" (version) command-line option  */
     if (argv.version) {
         process.stderr.write(`${my.name} ${my.version} <${my.homepage}>\n`)
         process.stderr.write(`${my.description}\n`)
@@ -106,6 +123,14 @@ const shortid     = require("shortid")
         process.stderr.write(`Licensed under ${my.license} <http://spdx.org/licenses/${my.license}.html>\n`)
         process.exit(0)
     }
+
+    /*  short-circuit processing of "-d" (daemon) command-line option  */
+    if (argv.daemon)
+        daemon({ cwd: process.cwd() })
+
+    /*  optionally write PID of process to file  */
+    if (argv.pidFile)
+        await fs.promises.writeFile(argv.pidFile, process.pid, { encoding: "utf8" })
 
     /*  fix array option handling of yargs  */
     if (typeof argv.label === "string")
@@ -129,10 +154,10 @@ const shortid     = require("shortid")
         else
             throw new Error(`invalid address/port specification "${spec}"`)
     }
-    const addrLocal  = argv.local
-    const addrRemote = argv.remote
-    argv.local  = parseAddrPort(argv.local)
-    argv.remote = parseAddrPort(argv.remote)
+    const addrLocal  = argv.accept
+    const addrRemote = argv.connect
+    argv.accept  = parseAddrPort(argv.accept)
+    argv.connect = parseAddrPort(argv.connect)
 
     /*  dump a piece of data as a string  */
     const dump = (data) => {
@@ -145,19 +170,30 @@ const shortid     = require("shortid")
         })
     }
 
-    /*  log verbose message  */
+    /*  log messages  */
     const levels = [
         { name: "ERROR",   style: chalk.red.bold },
         { name: "WARNING", style: chalk.yellow.bold },
         { name: "INFO",    style: chalk.blue },
         { name: "DEBUG",   style: chalk.green }
     ]
-    if (argv.verbose >= levels.length)
+    if (argv.logLevel >= levels.length)
         throw new Error("invalid maximum verbose level")
+    let stream = null
+    if (argv.logFile === "-")
+        stream = process.stdout
+    else if (argv.logFile !== "")
+        stream = fs.createWriteStream(argv.logFile, { flags: "a", encoding: "utf8" })
     const log = (level, msg) => {
-        if (level <= argv.verbose) {
+        if (level <= argv.logLevel) {
             const timestamp = moment().format("YYYY-MM-DD hh:mm:ss.SSS")
-            process.stderr.write(`[${timestamp}]: ${levels[level].style("[" + levels[level].name + "]")}: ${msg}\n`)
+            let line = `[${timestamp}]: `
+            if (stream.isTTY)
+                line += `${levels[level].style("[" + levels[level].name + "]")}`
+            else
+                line += `[${levels[level].name}]`
+            line += `: ${msg}\n`
+            stream.write(line)
         }
     }
 
@@ -253,7 +289,7 @@ const shortid     = require("shortid")
         }
 
         /*  connect to the server  */
-        serverSocket.connect(Object.assign({}, argv.remote), () => {
+        serverSocket.connect(Object.assign({}, argv.connect), () => {
             /*  got a server connection...  */
             log(2, `<${id}>: connect: proxy(${addrLocal}) >> server(${addrRemote})`)
             buffer.connected = true
@@ -309,10 +345,30 @@ const shortid     = require("shortid")
         })
     })
     log(2, `listen: proxy(${addrLocal})`)
-    server.listen(Object.assign({}, argv.local))
+    server.listen(Object.assign({}, argv.accept))
+
+    /*  graceful termination handling  */
+    const terminate = async (signal) => {
+        log(1, `received ${signal} signal -- shutting down`)
+        if (server.listening) {
+            await new Promise((resolve, reject) => {
+                server.close(() => {
+                    server.unref()
+                    resolve()
+                })
+            })
+        }
+        log(1, "exit")
+        process.exit(0)
+    }
+    process.on("SIGINT",  () => terminate("INT"))
+    process.on("SIGTERM", () => terminate("TERM"))
 })().catch((err) => {
     /*  handle fatal error  */
-    process.stderr.write(`docker-proxy: ${chalk.red("ERROR:")} ${err}\n`)
+    if (process.stderr.isTTY)
+        process.stderr.write(`docker-proxy: ${chalk.red("ERROR:")} ${err}\n`)
+    else
+        process.stderr.write(`docker-proxy: ERROR: ${err}\n`)
     process.exit(1)
 })
 

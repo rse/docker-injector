@@ -39,8 +39,9 @@ Examples
 --------
 
 ```
-$ docker-proxy \
-  -v 3 \
+$ docker-injector \
+  -p docker-injector.pid -d \
+  -l docker-injector.log -v 3 \
   -L docker.stack.status=injected \
   -B /etc/ssl:/etc/ssl:ro \
   -E SSL_CERT_DIR=/etc/ssl/certs \
@@ -49,8 +50,7 @@ $ docker-proxy \
   -E JAVA_TOOL_OPTIONS=-Djavax.net.ssl.trustStore=/etc/ssl/certs.jks \
   -E CURL_CA_PATH=/etc/ssl/certs \
   -E CURL_CA_BUNDLE=/etc/ssl/certs.pem \
-  -l 127.0.0.1:12375 \
-  -r 127.0.0.1:2375
+  -a 127.0.0.1:12375 -c 127.0.0.1:2375
 
 $ export DOCKER_HOST=tcp://127.0.0.1:12375
 

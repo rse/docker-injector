@@ -6,12 +6,15 @@
 `docker-injector`
 \[`-h`|`--help`\]
 \[`-V`|`--version`\]
-\[`-v`|`--verbose` *level*\]
+\[`-d`|`--daemon`\]
+\[`-p`|`--pid-file` *pid-file*\]
+\[`-l`|`--log-file` *log-file*\]
+\[`-v`|`--log-level` *log-level*\]
 \[`-L`|`--label` *key*`=`*value*\]
 \[`-E`|`--environment` *key*`=`*value*\]
 \[`-B`|`--bind` *local-dir*`:`*remote-dir*\[`:`*options*\]\]
-\[`-l`|`--local` *local-address*:*local-port*|*unix-socket-path*\]
-\[`-r`|`--remote` *remote-address*:*remote-port*|*unix-socket-path*\]
+\[`-a`|`--accept ` *local-address*:*local-port*|*unix-socket-path*\]
+\[`-c`|`--connect` *remote-address*:*remote-port*|*unix-socket-path*\]
 
 ## DESCRIPTION
 
@@ -29,27 +32,60 @@ client-side.
 
 The following command-line options and arguments exist:
 
-- \[`-h`|`--help`\]:
+-   \[`-h`|`--help`\]:
+    Show program usage information only.
 
-- \[`-V`|`--version`\]:
+-   \[`-V`|`--version`\]:
+    Show program version information only.
 
-- \[`-v`|`--verbose` *level*\]:
+-   \[`-d`|`--daemon`\]:
+    Detach from terminal into a daemon process. This usually should be
+    combined with option `-l`|--log-file`.
 
-- \[`-L`|`--label` *key*`=`*value*\]:
+-   \[`-p`|`--pid-file` *pid-file*\]:
+    Write process id (PID) to *pid-file*.
 
-- \[`-E`|`--environment` *key*`=`*value*\]:
+-   \[`-l`|`--log-file` *log-file*\]:
+    Write process log messages to *log-file*.
+    If *log-file* is `-` (the default), it logs to `stdout`.
 
-- \[`-B`|`--bind` *local-dir*`:`*remote-dir*\[`:`*options*\]\]:
+-   \[`-v`|`--log-level` *log-level*\]:
+    Set the verbosity/log-level of the log messages. The *log-level* can
+    be `0` (only error messages), `1` (error and warning messages, and
+    the default), `2` (error, warning and informational messages) or `3`
+    (error, warning, informational and debug messages).
 
-- \[`-l`|`--local` *local-address*:*local-port*|*unix-socket-path*\]:
+-   \[`-L`|`--label` *key*`=`*value*\]:
+    Inject a Docker label into the created containers.
+    This emulates the `docker`(1) command-line option `-l`.
 
-- \[`-r`|`--remote` *remote-address*:*remote-port*|*unix-socket-path*\]:
+-   \[`-E`|`--environment` *key*`=`*value*\]:
+    Inject a Docker environment variable into the created containers.
+    This emulates the `docker`(1) command-line option `-e`.
+
+-   \[`-B`|`--bind` *local-dir*`:`*remote-dir*\[`:`*options*\]\]:
+    Inject a Docker bind-mount into the created containers.
+    This emulates the `docker`(1) command-line option `-v`.
+
+-   \[`-a`|`--accept` *local-address*:*local-port*|*unix-socket-path*\]:
+    Accept new client connections on either the TCP socket
+    *local-address*:*local-port* or the Unix domain socket
+    *unix-socket-path*. The default is `127.0.0.1:12375`.
+
+-   \[`-c`|`--connect` *remote-address*:*remote-port*|*unix-socket-path*\]:
+    Connect to the Docker daemon, either via the TCP socket
+    *remote-address*:*remote-port* or the Unix domain socket
+    *unix-socket-path*. The default is `127.0.0.1:2375`.
 
 ## EXAMPLES
 
+The following inject SSL/TLS information of the Docker host into
+all created containers:
+
 ```
-$ docker-proxy \
-  -v 9 \
+$ docker-injector \
+  -p docker-injector.pid -d \
+  -l docker-injector.log -v 3 \
   -e SSL_CERT_DIR=/etc/ssl/certs \
   -e SSL_CERT_FILE=/etc/ssl/certs.pem \
   -e SSL_CERT_JKS=/etc/ssl/certs.jks \
@@ -57,8 +93,7 @@ $ docker-proxy \
   -e CURL_CA_PATH=/etc/ssl/certs \
   -e CURL_CA_BUNDLE=/etc/ssl/certs.pem \
   -m /etc/ssl:/etc/ssl:ro \
-  -l 127.0.0.1:12375 \
-  -r 127.0.0.1:2375
+  -a 127.0.0.1:12375 -c 127.0.0.1:2375
 
 $ export DOCKER_HOST=tcp://127.0.0.1:12375
 
