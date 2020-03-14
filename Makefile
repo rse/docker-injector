@@ -62,7 +62,7 @@ package-alpine:
 	        echo 'Set disable_coredump false' >>/etc/sudo.conf && \
 	        cd $$PWD && \
 	        sudo -u $(USR) -g $(GRP) npx pkg -t $(VERSION_PKG_ALPINE) ." && \
-	tar -c -f- docker-injector docker-injector.1 | xz -9 >docker-injector-linux-alpine-x64.tar.xz && rm -f docker-injector
+	tar -c -f- docker-injector docker-injector.8 | xz -9 >docker-injector-linux-alpine-x64.tar.xz && rm -f docker-injector
 
 package-debian:
 	@echo "(executing under Debian GNU/Linux)" && \
@@ -73,5 +73,5 @@ package-debian:
             useradd -M -d $$HOME -s /bin/bash -u $(UID) -g $(GID) -G root $(USR) && \
 	        cd $$PWD && \
 	        sudo -u $(USR) -g $(GRP) npx pkg -t $(VERSION_PKG_DEBIAN) ." && \
-	tar -c -f- docker-injector docker-injector.1 | xz -9 >docker-injector-linux-debian-x64.tar.xz && rm -f docker-injector
+	tar -c -f- docker-injector docker-injector.8 | xz -9 >docker-injector-linux-debian-x64.tar.xz && rm -f docker-injector
 
