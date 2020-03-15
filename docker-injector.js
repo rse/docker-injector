@@ -315,26 +315,26 @@ const daemon      = require("daemon")
                 }
 
                 /*  try to detect HTTP request head  */
-                const m = assembler.data.match(/^(GET|HEAD|POST|PUT|DELETE|CONNECT|OPTIONS|TRACE|PATCH|MOVE)(\s+)(\S+)(\s+)(HTTP\/\d+\.\d+\r?\n)((?:[^\r\n]+\r?\n)*)?(\r?\n)/)
+                const m = assembler.data.match(/^(GET|HEAD|POST|PUT|DELETE|CONNECT|OPTIONS|TRACE|PATCH|MOVE)\s+\S+\s+HTTP\/\d+\.\d+\r?\n((?:[^\r\n]+\r?\n)*)?\r?\n/)
                 if (m === null)
                     return
-                let [ head, verb, sep1, url, sep2, proto, headers, sep3 ] = m
+                const [ head, verb, headers ] = m
 
                 /*  parse HTTP headers  */
                 const header = {}
-                headers.replace(/([^\r\n]+?)(:\s*)([^\r\n]*)(\r?\n)/g, (_, name, sep, value, eol) => {
-                    header[name.toLowerCase()] = { name, sep, value, eol }
+                headers.replace(/([^\r\n]+?):\s*([^\r\n]*)\r?\n/g, (_, name, value) => {
+                    header[name.toLowerCase()] = value
                 })
 
                 /*  try to flush HTTP request if we cannot determine the body  */
-                if (header["connection"] !== undefined && header["connection"].value.match(/^Upgrade$/i)) {
+                if (header["connection"] !== undefined && header["connection"].match(/^Upgrade$/i)) {
                     receiver(assembler.data)
                     assembler.data = ""
                     assembler.upgraded = true
                 }
                 else if (header["content-length"] !== undefined) {
                     /*  body has a defined size  */
-                    const len = parseInt(header["content-length"].value)
+                    const len = parseInt(header["content-length"])
                     const request = assembler.data.substring(0, head.length + len)
                     assembler.data = assembler.data.substring(head.length + len)
                     receiver(request)
