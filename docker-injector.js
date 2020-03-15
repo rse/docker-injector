@@ -344,8 +344,9 @@ const daemon      = require("daemon")
             log(1, `<${id}>: error: proxy(${addrLocal}) << client(${addrRemote}): error=${error}`)
         })
     })
-    log(2, `listen: proxy(${addrLocal})`)
-    server.listen(Object.assign({}, argv.accept))
+    server.listen(Object.assign({}, argv.accept), () => {
+        log(2, `listen: proxy(${addrLocal})`)
+    })
 
     /*  graceful termination handling  */
     const terminate = async (signal) => {
