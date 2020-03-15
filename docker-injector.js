@@ -335,9 +335,11 @@ const daemon      = require("daemon")
                 else if (header["content-length"] !== undefined) {
                     /*  body has a defined size  */
                     const len = parseInt(header["content-length"])
-                    const request = assembler.data.substring(0, head.length + len)
-                    assembler.data = assembler.data.substring(head.length + len)
-                    receiver(request)
+                    if (assembler.data.length >= head.length + len) {
+                        const request = assembler.data.substring(0, head.length + len)
+                        assembler.data = assembler.data.substring(head.length + len)
+                        receiver(request)
+                    }
                 }
                 else if (!verb.match(/^(?:POST|PUT|PATCH)$/)) {
                     /*  body is not defined for most verbs  */
