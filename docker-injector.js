@@ -288,6 +288,66 @@ const daemon      = require("daemon")
             }
         }
 
+        /*  re-assemble chunks of HTTP requests into HTTP requests as a whole  */
+        const assembler = {
+            data: "",
+            upgraded: false,
+            process: (data, receiver) => {
+                /*  special case: end of stream  */
+                if (data === null) {
+                    if (assembler.data.length > 0) {
+                        receiver(assembler.data)
+                        assembler.data = ""
+                    }
+                    return
+                }
+
+                /*  add current data chunk  */
+                assembler.data += data.toString()
+
+                /*  special case of upgraded connection  */
+                if (assembler.upgraded) {
+                    if (assembler.data.length > 0) {
+                        receiver(assembler.data)
+                        assembler.data = ""
+                    }
+                    return
+                }
+
+                /*  try to detect HTTP request head  */
+                const m = assembler.data.match(/^(GET|HEAD|POST|PUT|DELETE|CONNECT|OPTIONS|TRACE|PATCH|MOVE)(\s+)(\S+)(\s+)(HTTP\/\d+\.\d+\r?\n)((?:[^\r\n]+\r?\n)*)?(\r?\n)/)
+                if (m === null)
+                    return
+                let [ head, verb, sep1, url, sep2, proto, headers, sep3 ] = m
+
+                /*  parse HTTP headers  */
+                const header = {}
+                headers.replace(/([^\r\n]+?)(:\s*)([^\r\n]*)(\r?\n)/g, (_, name, sep, value, eol) => {
+                    header[name.toLowerCase()] = { name, sep, value, eol }
+                })
+
+                /*  try to flush HTTP request if we cannot determine the body  */
+                if (header["connection"] !== undefined && header["connection"].value.match(/^Upgrade$/i)) {
+                    receiver(assembler.data)
+                    assembler.data = ""
+                    assembler.upgraded = true
+                }
+                else if (header["content-length"] !== undefined) {
+                    /*  body has a defined size  */
+                    const len = parseInt(header["content-length"].value)
+                    const request = assembler.data.substring(0, head.length + len)
+                    assembler.data = assembler.data.substring(head.length + len)
+                    receiver(request)
+                }
+                else if (!verb.match(/^(?:POST|PUT|PATCH)$/)) {
+                    /*  body is not defined for most verbs  */
+                    const request = head
+                    assembler.data = assembler.data.substring(head.length)
+                    receiver(request)
+                }
+            }
+        }
+
         /*  connect to the server  */
         serverSocket.connect(Object.assign({}, argv.connect), () => {
             /*  got a server connection...  */
@@ -323,9 +383,11 @@ const daemon      = require("daemon")
         clientSocket.on("data", (data) => {
             /*  received data from client  */
             log(3, `<${id}>: data: proxy(${addrLocal}) << client(${addrRemote}): "${dump(data)}"`)
-            data = processRequest(id, data)
-            buffer.data.push(data)
-            buffer.flush()
+            assembler.process(data, (data) => {
+                data = processRequest(id, data)
+                buffer.data.push(data)
+                buffer.flush()
+            })
         })
         clientSocket.on("close", (hadError) => {
             /*  client closed connection  */
@@ -335,6 +397,11 @@ const daemon      = require("daemon")
                     serverSocket.destroy()
             }
             else {
+                assembler.process(null, (data) => {
+                    data = processRequest(id, data)
+                    buffer.data.push(data)
+                    buffer.flush()
+                })
                 buffer.flush()
                 serverSocket.end()
             }
