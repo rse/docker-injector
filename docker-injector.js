@@ -204,7 +204,7 @@ const daemon      = require("daemon")
         const m = str.match(/^(\S+\s+)(\S+)(\s+HTTP\/\d+\.\d+\r?\n)((?:[^\r\n]+\r?\n)*)?(\r?\n)((?:.|\r?\n)*)$/)
         if (m !== null) {
             let [ , verb, url, proto, headers, seperator, body ] = m
-            if (url.match(/^\/v\d+\.\d+\/containers\/create$/)) {
+            if (url.match(/^\/v\d+\.\d+\/containers\/create(?:\?.*)?$/)) {
                 const header = {}
                 headers.replace(/([^\r\n]+?)(:\s*)([^\r\n]*)(\r?\n)/g, (_, name, sep, value, eol) => {
                     header[name.toLowerCase()] = { name, sep, value, eol }
